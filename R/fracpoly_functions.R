@@ -1033,136 +1033,149 @@ mcmc_sum <- function(mcmc) {
 #' run), named as follows `"FP_<1st power>_<2nd power>`.
 #'
 #' @export
-sequence_fpoly <- function(jagsdat, powers=c(-3,-2,-1,-0.5,0,0.5,1,2,3), polyorder=1,
-                           jagsfile=NULL, savefile=NULL, overwrite=TRUE,
-                           parameters.to.save=c("d", "mu", "dev", "totresdev"),
-                           inits=fp_geninits(ns=jagsdat$ns, nt=jagsdat$nt, polyorder=polyorder, seed=890421),
+sequence_fpoly <- function(jagsdat,
+                           powers = c(-2, -1, -0.5, 0, 0.5, 1, 2, 3),
+                           polyorder = 1,
+                           jagsfile = NULL,
+                           savefile = NULL,
+                           overwrite = TRUE,
+                           parameters.to.save = c("d", "mu", "dev", "totresdev"),
+                           inits = fp_geninits(ns = jagsdat$ns,
+                                               nt = jagsdat$nt,
+                                               polyorder = polyorder,
+                                               seed = 890421),
+                           DIC = TRUE,
                            ...) {
 
   args <- list(...)
 
-  # Ensure jagsdat has correct d.mean and prec for polyorder
+  ## ----- allow shorthand 'first' / 'second' for powers -----
+  default1 <- c(-2, -1, -0.5, 0, 0.5, 1, 2, 3)
+  if (is.character(powers) && length(powers) == 1) {
+    if (powers == "first" && polyorder == 1) {
+      powers <- default1
+    } else if (powers == "second" && polyorder == 2) {
+      powers <- default1
+    } else {
+      stop("`powers` must be numeric or 'first' (for polyorder=1) or 'second' (for polyorder=2)")
+    }
+  }
+  ## ---------------------------------------------------------
+
+  # Ensure jagsdat has correct mean & precision arrays
   if (!all(c("mean", "prec") %in% names(jagsdat))) {
-    if (polyorder==1) {
-      jagsdat$mean <- c(0,0)
-      jagsdat$prec <- array(c(0.0001, 0, 0, 0.0001), dim=c(2,2))
-    } else if (polyorder==2){
-      jagsdat$mean <- c(0,0,0)
-      jagsdat$prec <- array(c(0.0001, 0, 0,
-                              0, 0.0001, 0,
-                              0, 0, 0.0001), dim=c(3,3))
+    if (polyorder == 1) {
+      jagsdat$mean <- c(0, 0)
+      jagsdat$prec <- array(c(0.0001, 0,
+                              0,      0.0001),
+                            dim = c(2, 2))
+    } else if (polyorder == 2) {
+      jagsdat$mean <- c(0, 0, 0)
+      jagsdat$prec <- array(c(0.0001, 0,      0,
+                              0,      0.0001, 0,
+                              0,      0,      0.0001),
+                            dim = c(3, 3))
     }
   }
 
-  # Should previous model file be overwritten or appended?
-  if (overwrite==FALSE) {
+  # Prepare storage or load existing
+  if (!overwrite) {
     if (!is.null(savefile)) {
       modseq <- readRDS(savefile)
     } else {
       modseq <- list()
     }
-  } else if (overwrite==TRUE) {
+  } else {
     modseq <- list()
   }
 
-  # 1st order FP
-  if (polyorder==1) {
-    for (p1 in seq_along(powers)) {
+  if (polyorder == 1) {
+    # First‐order FP models
+    for (i in seq_along(powers)) {
+      p1     <- powers[i]
+      modnam <- paste("FP", p1, sep = "_")
 
-      modnam <- paste("FP", powers[p1], sep="_")
-
-      if (modnam %in% names(modseq) & overwrite==FALSE) {
-        #stop("Model run has the same FP powers as an existing model in the list, but overwrite==FALSE")
-        print(paste0("Skipping fractional polynomial P1=", powers[p1], ", model ", p1, "/", length(powers)))
+      if (modnam %in% names(modseq) && !overwrite) {
+        message("Skipping existing model ", modnam)
       } else {
-        print(paste0("Running fractional polynomial P1=", powers[p1], ", model ", p1, "/", length(powers)))
-
-        # Set FP power
-        jagsdat$P1 <- powers[p1]
-
+        message("Running 1st‐order FP P1=", p1,
+                " (model ", i, "/", length(powers), ")")
+        jagsdat$P1 <- p1
 
         out <- tryCatch({
-          # Run JAGS model
-          jagsmod <- do.call(R2jags::jags, c(args, list(data = jagsdat,
-                                                        inits=inits,
-                                                        parameters.to.save=parameters.to.save,
-                                                        model.file=ifelse(!is.null(jagsfile), jagsfile, system.file("JAGSmodels", "FE_1st_order_model.jags", package="BristolTAG"))
-                                                        #model.file="inst/JAGSmodels/FE_1st_order_model.jags"
+          do.call(R2jags::jags, c(args, list(
+            data               = jagsdat,
+            inits              = inits,
+            parameters.to.save = parameters.to.save,
+            model.file         = if (!is.null(jagsfile)) jagsfile
+                                 else system.file("JAGSmodels",
+                                                  "FE_1st_order_model.jags",
+                                                  package = "BristolTAG")
           )))
-        },
-        error=function(cond) {
-          message(cond)
-          return(list(error=cond))
+        }, error = function(e) {
+          message("  model error: ", e$message)
+          list(error = e)
         })
 
-        attr(out, "trtnames") <- attr(jagsdat, "trtnames")
+        attr(out, "trtnames")   <- attr(jagsdat, "trtnames")
         attr(out, "studynames") <- attr(jagsdat, "studynames")
-        attr(out, "ipd") <- attr(jagsdat, "ipd")
+        attr(out, "ipd")        <- attr(jagsdat, "ipd")
         modseq[[modnam]] <- out
 
-        if (!is.null(savefile)) {
-          saveRDS(modseq, file=savefile)
-        }
+        if (!is.null(savefile)) saveRDS(modseq, file = savefile)
       }
-      }
+    }
 
-
-    # 2nd order FP
-  } else if (polyorder==2) {
+  } else if (polyorder == 2) {
+    # Second‐order FP models (combinations P2 >= P1)
+    n <- length(powers)
+    perm <- n * (n + 1) / 2
     count <- 1
-    for (p1 in seq_along(powers)) {
-      for (p2 in seq_along(powers)) {
 
-        # Calculate permutations of powers
-        perm <- factorial(length(powers)) / factorial(length(powers)-2)
+    for (i1 in seq_along(powers)) {
+      for (i2 in seq_along(powers)) {
+        if (powers[i2] < powers[i1]) next
+        p1     <- powers[i1]
+        p2     <- powers[i2]
+        modnam <- paste("FP", p1, p2, sep = "_")
 
-        # Check model name
-        modnam <- paste("FP", powers[p1], powers[p2], sep="_")
-
-        if (modnam %in% names(modseq) & overwrite==FALSE) {
-          #stop("Model run has the same FP powers as an existing model in the list, but overwrite==FALSE")
-          print(paste0("Skipping fractional polynomial P1=", powers[p1], ", P2=", powers[p2],
-                       ", model ", count, "/", perm))
-          count <- count + 1
-
+        if (modnam %in% names(modseq) && !overwrite) {
+          message("Skipping existing model ", modnam)
         } else {
-          print(paste0("Running fractional polynomial P1=", powers[p1], ", P2=", powers[p2],
-                       ", model ", count, "/", perm))
+          message("Running 2nd‐order FP P1=", p1,
+                  ", P2=", p2,
+                  " (model ", count, "/", perm, ")")
+          jagsdat$P1 <- p1
+          jagsdat$P2 <- p2
           count <- count + 1
-
-          # Set FP power
-          jagsdat$P1 <- powers[p1]
-          jagsdat$P2 <- powers[p2]
-
 
           out <- tryCatch({
-            # Run JAGS model
-            jagsmod <- do.call(R2jags::jags, c(args, list(data = jagsdat,
-                                                          inits=inits,
-                                                          parameters.to.save=parameters.to.save,
-                                                          model.file=ifelse(!is.null(jagsfile), jagsfile, system.file("JAGSmodels", "FE_2nd_order_model.jags", package="BristolTAG"))
+            do.call(R2jags::jags, c(args, list(
+              data               = jagsdat,
+              inits              = inits,
+              parameters.to.save = parameters.to.save,
+              model.file         = if (!is.null(jagsfile)) jagsfile
+                                   else system.file("JAGSmodels",
+                                                    "FE_2nd_order_model.jags",
+                                                    package = "BristolTAG")
             )))
-          },
-          error=function(cond) {
-            message(cond)
-            return(list(error=cond))
+          }, error = function(e) {
+            message("  model error: ", e$message)
+            list(error = e)
           })
 
-          attr(out, "trtnames") <- attr(jagsdat, "trtnames")
+          attr(out, "trtnames")   <- attr(jagsdat, "trtnames")
           attr(out, "studynames") <- attr(jagsdat, "studynames")
-          attr(out, "ipd") <- attr(jagsdat, "ipd")
+          attr(out, "ipd")        <- attr(jagsdat, "ipd")
           modseq[[modnam]] <- out
 
-          if (!is.null(savefile) & !("error" %in% names(out))) {
-            saveRDS(modseq, file=savefile)
+          if (!is.null(savefile) && !"error" %in% names(out)) {
+            saveRDS(modseq, file = savefile)
           }
         }
       }
     }
   }
-
-  # attributes(modseq)$trtnames <- attributes(jagsdat)$trtnames
-  # attributes(modseq)$studynames <- attributes(jagsdat)$studynames
 
   class(modseq) <- "sequence.fpoly"
   return(modseq)
