@@ -41,7 +41,7 @@ for (k in 2:nt){				# LOOP THROUGH TREATMENTS
  }
 }
 
-# Output
+# Output (remove # if you want to use)
 # for (m in 1:maxt){     			     # Create time points for output 
 #  time1[m]<-(equals(P1,0)*log(m) + (1-equals(P1,0))*pow(m,P1)) 
 # }
