@@ -27,16 +27,16 @@ for (i in 1:ns){                  # LOOP THROUGH STUDIES
  
  totresdev <- sum(dev[])           #Total Residual Deviance
 
-     
 #priors
 for (i in 1:ns){        		      # LOOP THROUGH STUDIES
   mu[i,1:2] ~ dmnorm(mean[1:2], prec[1:2,1:2])   # vague priors for all trial baselines 
  }
-d[1,1]<-0        				         # alpha_0 treatment effect is zero for reference treatment
-d[1,2]<-0       					        # alpha_1 treatment effect is zero for reference treatment
+
+d[reftrt,1]<-0   ## replace hard-coded 1 with reftrt from R**
+d[reftrt,2]<-0   ## likewise for the second parameter**
 
 for (k in 2:nt){			            # LOOP THROUGH TREATMENTS
-  d[k,1:2] ~ dmnorm(mean[1:2],prec[1:2,1:2])  # vague priors for treatment effects 
+  if (k != reftrt) d[k,1:2] ~ dmnorm(mean[1:2],prec[1:2,1:2])  ## skip the reference arm  # vague priors for treatment effects 
  }
 
 #Output
@@ -55,8 +55,8 @@ for (k in 2:nt){			            # LOOP THROUGH TREATMENTS
 
 # Provide estimates of survival probabilities over time by treatment 
 #for (k in 1:nt){
-#  alpha0[k]<-mu[3,1]+d[k,1]       # alpha_0 by treatment using baseline from study 3
-#  alpha1[k]<-mu[3,2]+d[k,2]       # alpha_1 by treatment using baseline from study 3 
+#   alpha0[k] <- mu[refstudy, 1] + d[k, 1]	# alpha_0 by treatment using baseline from reference study set in R
+#   alpha1[k] <- mu[refstudy, 2] + d[k, 2]      # alpha_1 by treatment using baseline from reference study set in R
 #           
 #  for (m in 1:maxt){
 #    log(HAZARD[k,m])<-alpha0[k]+alpha1[k]*time1[m]  #hazard over time by treatment
