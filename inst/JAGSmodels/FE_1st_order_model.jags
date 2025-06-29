@@ -40,30 +40,30 @@ for (k in 2:nt){			            # LOOP THROUGH TREATMENTS
  }
 
 # Output
-for (m in 1:maxt){     			     # Create time points for output 
-  time1[m]<-(equals(P1,0)*log(m) + (1-equals(P1,0))*pow(m,P1)   ) 
- }
+#for (m in 1:maxt){     			     # Create time points for output 
+#  time1[m]<-(equals(P1,0)*log(m) + (1-equals(P1,0))*pow(m,P1)   ) 
+# }
 
 # Hazard ratios over time for all possible contrasts
-for (c in 1:(nt-1)){
-  for (k in (c+1):nt){
-    for (m in 1:maxt){
-      log(HR[c,k,m])<-(d[k,1]-d[c,1])+(d[k,2]-d[c,2])*time1[m] 
-     }
-   }
- }
+#for (c in 1:(nt-1)){
+# for (k in (c+1):nt){
+#   for (m in 1:maxt){
+#     log(HR[c,k,m])<-(d[k,1]-d[c,1])+(d[k,2]-d[c,2])*time1[m] 
+#    }
+#  }
+#}
 
 # Provide estimates of survival probabilities over time by treatment 
 for (k in 1:nt){
   alpha0[k]<-mu[1,1]+d[k,1]       # alpha_0 by treatment using baseline from study 1
   alpha1[k]<-mu[1,2]+d[k,2]       # alpha_1 by treatment using baseline from study 1 
            
-for (m in 1:maxt){
-    log(HAZARD[k,m])<-alpha0[k]+alpha1[k]*time1[m]  # Hazard over time by treatment
-	  CUM_H[k,m]<-sum(HAZARD[k,1:m]) # Cumulative hazard over time by treatment
-    T[k,m]<-1-exp(-CUM_H[k,m])	  # Mortality over time by treatment
-	  S[k,m]<-1-T[k,m]              # Survival over time by treatment
-   }
+#for (m in 1:maxt){
+#   log(HAZARD[k,m])<-alpha0[k]+alpha1[k]*time1[m]  # Hazard over time by treatment
+#	  CUM_H[k,m]<-sum(HAZARD[k,1:m]) # Cumulative hazard over time by treatment
+#   T[k,m]<-1-exp(-CUM_H[k,m])	  # Mortality over time by treatment
+#	  S[k,m]<-1-T[k,m]              # Survival over time by treatment
+#  }
  }
 
 }                                 # *** PROGRAM ENDS
