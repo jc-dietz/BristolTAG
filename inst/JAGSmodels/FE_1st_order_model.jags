@@ -35,11 +35,13 @@ for (i in 1:ns){        		      # LOOP THROUGH STUDIES
 d[reftrt,1]<-0   ## Replace hard-coded 1 with reftrt from R
 d[reftrt,2]<-0   ## Likewise for the second parameter**
 
-for (k in 2:nt){				# LOOP THROUGH TREATMENTS
-  if (k != reftrt) {				# Skip the reference arm
-	~ dmnorm(mean[1:2],prec[1:2,1:2])	# Vague priors for treatment effects 
- }
-}
+  #–– Treatment effects ––#
+  for (k in 1:nt) {					# draw every arm…
+    d[k,1:2] ~ dmnorm(mean[1:2], prec[1:2,1:2])		# …then zero out the reference arm
+    d[k,1]   <- d[k,1] * (1 - equals(k, reftrt))
+    d[k,2]   <- d[k,2] * (1 - equals(k, reftrt))
+  }
+
 
 # Output (remove # if you want to use)
  for (m in 1:maxt){     			     # Create time points for output 
