@@ -61,20 +61,20 @@ for (k in 2:nt){			            # LOOP THROUGH TREATMENTS
 #}
 
 # Provide estimates of survival probabilities over time by treatment 
-for (k in 1:nt){
-  alpha0[k] <- mu[1,1] + d[k,1]       # alpha_0 by treatment using baseline from study 1
-  alpha1[k] <- mu[1,2] + d[k,2]       # alpha_1 by treatment using baseline from study 1 
-  alpha2[k] <- mu[1,3] + d[k,3]       # alpha_2 by treatment using baseline from study 1
+#for (k in 1:nt){
+#  alpha0[k] <- mu[1,1] + d[k,1]       # alpha_0 by treatment using baseline from study 1
+#  alpha1[k] <- mu[1,2] + d[k,2]       # alpha_1 by treatment using baseline from study 1 
+#  alpha2[k] <- mu[1,3] + d[k,3]       # alpha_2 by treatment using baseline from study 1
   
- # for (m in 1:maxt){
- #  log(HAZARD[k,m]) <- 
- #    alpha0[k] 
- #  + alpha1[k]*time1[m] 
- #  + alpha2[k]*time2[m]        # Hazard over time by treatment
- #  CUM_H[k,m] <- sum(HAZARD[k,1:m])   # Cumulative hazard over time by treatment
- #  T[k,m]     <- 1 - exp(-CUM_H[k,m])  # Mortality over time by treatment
- #  S[k,m]     <- 1 - T[k,m]            # Survival over time by treatment
- #}
-}
+# for (m in 1:maxt){
+#  log(HAZARD[k,m]) <- 
+#    alpha0[k] 
+#  + alpha1[k]*time1[m] 
+#  + alpha2[k]*time2[m]        # Hazard over time by treatment
+#  CUM_H[k,m] <- sum(HAZARD[k,1:m])   # Cumulative hazard over time by treatment
+#  T[k,m]     <- 1 - exp(-CUM_H[k,m])  # Mortality over time by treatment
+#  S[k,m]     <- 1 - T[k,m]            # Survival over time by treatment
+#}
+#}
 
 }                                 # *** PROGRAM ENDS
